@@ -1,6 +1,5 @@
 from pathlib import Path
-
-import aiosqlite
+import sqlite3
 
 from etl import BaseETL
 from etl.models.starlink import Starlink
@@ -125,14 +124,17 @@ class StarlinkETL(BaseETL):
 
         return starlinks
 
-    async def load(self, starlinks: list[Starlink]) -> None:
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("PRAGMA foreign_keys = OFF;")
-            await db.execute("PRAGMA journal_mode = WAL;")
-            await db.execute("PRAGMA synchronous = NORMAL;")
+    def load(self, starlinks: list[Starlink]) -> None:
+        with sqlite3.connect(self.db_path) as db:
+            cursor = db.cursor()
 
-            # Create table if it doesn't exist
-            await db.execute(create_table_sql)
+            # Database performance tuning
+            cursor.execute("PRAGMA foreign_keys = OFF;")
+            cursor.execute("PRAGMA journal_mode = WAL;")
+            cursor.execute("PRAGMA synchronous = NORMAL;")
+
+            # Ensure table exists
+            cursor.execute(create_table_sql)
 
             # Convert dataclass list to list of tuples
             data = [
@@ -177,8 +179,19 @@ class StarlinkETL(BaseETL):
                 for s in starlinks
             ]
 
-            # Insert Data
-            async with db.execute("BEGIN TRANSACTION;"):
-                await db.execute("DELETE FROM starlink;")
-                await db.executemany(insert_sql, data)
-                await db.commit()
+            # Begin explicit transaction
+            cursor.execute("BEGIN TRANSACTION;")
+            try:
+                # Optional: clear table first
+                cursor.execute("DELETE FROM starlink;")
+
+                # Bulk insert Starlink data
+                cursor.executemany(insert_sql, data)
+
+                # Commit transaction
+                db.commit()
+
+            except Exception as e:
+                # Rollback if something fails
+                db.rollback()
+                raise e

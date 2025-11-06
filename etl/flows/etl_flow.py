@@ -1,23 +1,14 @@
-import asyncio
-
+from typing import Literal
 from prefect import flow, task
-from prefect.task_runners import ConcurrentTaskRunner
-from prefect.runtime import task_run
+from prefect.futures import wait
 
-from etl import BaseETL, LaunchETL, StarlinkETL
-
-
-def generate_task_run_name(step_name: str):
-    def _generate_name():
-        etl: BaseETL = task_run.get_parameters()["etl"]
-        return f"{etl.name} - {step_name}"
-
-    return _generate_name
+from etl import BaseETL, LaunchETL, StarlinkETL, RocketETL
+from etl.utils.utils import generate_task_run_name
 
 
 @task(name="Extract", task_run_name=generate_task_run_name("Extract"))
-async def extract_task(etl: BaseETL, url: str) -> list[dict]:
-    return await etl.extract(url)
+def extract_task(etl: BaseETL, url: str) -> list[dict]:
+    return etl.extract(url)
 
 
 @task(name="Transform", task_run_name=generate_task_run_name("Transform"))
@@ -26,39 +17,57 @@ def transform_task(etl: BaseETL, raw_data: list[dict]) -> list:
 
 
 @task(name="Load", task_run_name=generate_task_run_name("Load"))
-async def load_task(etl: BaseETL, transformed_data: list) -> None:
-    await etl.load(transformed_data)
+def load_task(etl: BaseETL, transformed_data: list) -> None:
+    etl.load(transformed_data)
 
 
-async def run_etl(etl, url: str):
-    raw_data = await extract_task(etl, url)
-    transformed_data = transform_task(etl, raw_data)
-    await load_task(etl, transformed_data)
+@flow
+def main_pipeline(etl_param: None | Literal["Launch", "Rocket", "Starlink"] = None):
+    etls = {
+        "Rocket": (RocketETL(), "https://api.spacexdata.com/v4/rockets"),
+        "Launch": (LaunchETL(), "https://api.spacexdata.com/v4/launches"),
+        "Starlink": (StarlinkETL(), "https://api.spacexdata.com/v4/starlink"),
+    }
 
+    # Filter if ETL specified
+    if etl_param:
+        etls = {etl_param: etls[etl_param]}
 
-@flow(task_runner=ConcurrentTaskRunner())
-async def main_pipeline(selected_etls: list[str] | None = None):
-    etls = [
-        (LaunchETL(), "https://api.spacexdata.com/v4/launches"),
-        (StarlinkETL(), "https://api.spacexdata.com/v4/starlink"),
-    ]
-    valid_names = [etl.name for etl, _ in etls]
+    # Extract in Parallel
+    futures_extract = extract_task.map(
+        [etl for etl, _ in etls.values()],
+        [url for _, url in etls.values()],
+    )
+    results_raw_data = [f.result() for f in futures_extract]
 
-    # Filter ETLs if names are provided
-    if selected_etls is not None:
-        etls = [(etl, url) for etl, url in etls if etl.name in selected_etls]
+    # Transform in Parallel
+    futures_transform = transform_task.map(
+        [etl for etl, _ in etls.values()], [raw_data for raw_data in results_raw_data]
+    )
+    results_transformed_data = [f.result() for f in futures_transform]
 
-    # Raise exception if no ETLs match
-    if not etls:
-        raise ValueError(
-            f"No matching ETLs found for {selected_etls}. "
-            f"Valid ETL names are: {valid_names}"
+    # Load Data
+    if etl_param:
+        load_task(etls[etl_param][0], results_transformed_data[0])
+    else:
+        rocket_future = load_task.submit(
+            etls["Rocket"][0],
+            results_transformed_data[list(etls.keys()).index("Rocket")],
+        )
+        launch_future = load_task.submit(
+            etls["Launch"][0],
+            results_transformed_data[list(etls.keys()).index("Launch")],
+            wait_for=[rocket_future],
+        )
+        starlink_future = load_task.submit(
+            etls["Starlink"][0],
+            results_transformed_data[list(etls.keys()).index("Starlink")],
+            wait_for=[launch_future],
         )
 
-    # Run selected ETLs concurrently
-    await asyncio.gather(*(run_etl(etl, url) for etl, url in etls))
+        wait([rocket_future, launch_future, starlink_future])
 
 
 if __name__ == "__main__":
-    # asyncio.run(main_pipeline())
+    # main_pipeline()
     main_pipeline.serve(name="ETL-Pipeline")

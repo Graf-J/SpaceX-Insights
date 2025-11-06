@@ -2273,7 +2273,6 @@ name = "spacex-insights"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "aiosqlite" },
     { name = "httpx" },
     { name = "prefect" },
 ]
@@ -2286,7 +2285,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosqlite", specifier = ">=0.21.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "prefect", specifier = ">=3.5.0" },
 ]

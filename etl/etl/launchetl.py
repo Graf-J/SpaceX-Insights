@@ -2,7 +2,7 @@ from etl import BaseETL
 from etl.models.launch import Launch
 from pathlib import Path
 from etl.utils.utils import parse_date
-import aiosqlite
+import sqlite3
 
 create_table_sql = """
 CREATE TABLE IF NOT EXISTS launch (
@@ -81,14 +81,17 @@ class LaunchETL(BaseETL):
 
         return launches
 
-    async def load(self, launches: list[Launch]) -> None:
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("PRAGMA foreign_keys = OFF;")
-            await db.execute("PRAGMA journal_mode = WAL;")
-            await db.execute("PRAGMA synchronous = NORMAL;")
+    def load(self, launches: list[Launch]) -> None:
+        with sqlite3.connect(self.db_path) as db:
+            cursor = db.cursor()
 
-            # Create table if it doesn't exist
-            await db.execute(create_table_sql)
+            # Database performance tuning
+            cursor.execute("PRAGMA foreign_keys = OFF;")
+            cursor.execute("PRAGMA journal_mode = WAL;")
+            cursor.execute("PRAGMA synchronous = NORMAL;")
+
+            # Ensure table exists
+            cursor.execute(create_table_sql)
 
             # Convert dataclass list to list of tuples
             data = [
@@ -114,8 +117,19 @@ class LaunchETL(BaseETL):
                 for launch in launches
             ]
 
-            # Insert Data
-            async with db.execute("BEGIN TRANSACTION;"):
-                await db.execute("DELETE FROM launch;")  # Optional: clear table first
-                await db.executemany(insert_sql, data)
-                await db.commit()
+            # Begin transaction manually
+            cursor.execute("BEGIN TRANSACTION;")
+            try:
+                # Optional: clear table before re-inserting
+                cursor.execute("DELETE FROM launch;")
+
+                # Bulk insert launches
+                cursor.executemany(insert_sql, data)
+
+                # Commit the transaction
+                db.commit()
+
+            except Exception as e:
+                # Rollback if something goes wrong
+                db.rollback()
+                raise e

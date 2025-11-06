@@ -12,14 +12,14 @@ class BaseETL(ABC, Generic[T]):
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
 
-    async def extract(self, url: str) -> list[dict]:
-        # Fetch Data from API
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
+    def extract(self, url: str) -> list[dict]:
+        # Fetch Data from API (synchronously)
+        with httpx.Client() as client:
+            response = client.get(url)
             response.raise_for_status()
             data = response.json()
 
-        # Ensure the return is always a List of Dicts
+        # Ensure the return is always a List[Dict]
         if isinstance(data, dict):
             return [data]
         elif isinstance(data, list):

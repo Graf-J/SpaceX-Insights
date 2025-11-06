@@ -1,5 +1,9 @@
 from datetime import datetime
 
+from prefect.runtime import task_run
+
+from etl import BaseETL
+
 
 def parse_date(s: str | None) -> datetime | None:
     if not s or s.strip() == "":
@@ -14,3 +18,11 @@ def parse_date(s: str | None) -> datetime | None:
         except ValueError:
             # Fallback to date-only
             return datetime.strptime(s, "%Y-%m-%d")
+
+
+def generate_task_run_name(step_name: str):
+    def _generate_name():
+        etl: BaseETL = task_run.get_parameters()["etl"]
+        return f"{etl.name} - {step_name}"
+
+    return _generate_name

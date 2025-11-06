@@ -5,23 +5,23 @@ from typing import Optional
 
 @dataclass
 class Starlink:
-    # --- Basic metadata ---
+    # Basic metadata
     id: str
     version: Optional[str]
     launch_id: Optional[str]
 
-    # --- Position & movement ---
+    # Position & movement
     longitude: Optional[float]
     latitude: Optional[float]
     height_km: Optional[float]
     velocity_kms: Optional[float]
 
-    # --- Object identity ---
+    # Object identity
     object_name: Optional[str]
     object_id: Optional[str]
     rcs_size: Optional[str]
 
-    # --- Orbital parameters ---
+    # Orbital parameters
     epoch: Optional[str]
     mean_motion: Optional[float]
     eccentricity: Optional[float]
@@ -31,7 +31,7 @@ class Starlink:
     mean_anomaly: Optional[float]
     ephemeris_type: Optional[int]
 
-    # --- Additional orbital elements ---
+    # Additional orbital elements
     mean_motion_dot: Optional[float]
     mean_motion_ddot: Optional[float]
     bstar: Optional[float]
@@ -40,11 +40,11 @@ class Starlink:
     apoapsis: Optional[float]
     periapsis: Optional[float]
 
-    # --- Identification ---
+    # Identification
     norad_cat_id: Optional[int]
     rev_at_epoch: Optional[int]
 
-    # --- Launch & decay metadata ---
+    # Launch & decay metadata
     launch_date: Optional[datetime]
     site: Optional[str]
     decay_date: Optional[datetime]
@@ -52,7 +52,7 @@ class Starlink:
     file_number: Optional[int]
     gp_id: Optional[int]
 
-    # --- Two-line element set (TLE) ---
+    # Two-line element set (TLE)
     tle_line0: Optional[str]
     tle_line1: Optional[str]
     tle_line2: Optional[str]

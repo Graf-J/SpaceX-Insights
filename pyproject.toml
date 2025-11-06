@@ -5,7 +5,6 @@ description = "Extracting data from the official SpaceX API and analyze the data
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
-    "aiosqlite>=0.21.0",
     "httpx>=0.28.1",
     "prefect>=3.5.0",
 ]
