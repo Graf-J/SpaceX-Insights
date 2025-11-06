@@ -1,10 +1,10 @@
-from datetime import datetime
 from pathlib import Path
 
 import aiosqlite
 
-from etl.etl.baseetl import BaseETL
+from etl import BaseETL
 from etl.models.starlink import Starlink
+from etl.utils.utils import parse_date
 
 create_table_sql = """
 CREATE TABLE IF NOT EXISTS starlink (
@@ -77,14 +77,6 @@ class StarlinkETL(BaseETL):
         super().__init__(db_path)
 
     def transform(self, raw_data: list[dict]) -> list[Starlink]:
-        def parse_date(s: str | None) -> datetime:
-            if not s or s.strip() == "":
-                return None
-            try:
-                return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
-            except ValueError:
-                return datetime.strptime(s, "%Y-%m-%d")
-
         starlinks = []
         for raw in raw_data:
             st: dict = raw.get("spaceTrack", {})
@@ -133,7 +125,7 @@ class StarlinkETL(BaseETL):
 
     async def load(self, starlinks: list[Starlink]) -> None:
         async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("PRAGMA foreign_keys = ON;")
+            await db.execute("PRAGMA foreign_keys = OFF;")
             await db.execute("PRAGMA journal_mode = WAL;")
             await db.execute("PRAGMA synchronous = NORMAL;")
 

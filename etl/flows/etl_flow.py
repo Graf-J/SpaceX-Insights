@@ -1,9 +1,9 @@
 import asyncio
-from typing import Type
 
 from prefect import flow, task
+from prefect.task_runners import ConcurrentTaskRunner
 
-from etl import BaseETL, StarlinkETL
+from etl import BaseETL, LaunchETL, StarlinkETL
 
 
 @task
@@ -21,29 +21,26 @@ async def load_task(etl: BaseETL, transformed_data: list) -> None:
     await etl.load(transformed_data)
 
 
-@flow
-async def etl_flow(etl_class: Type[BaseETL], url: str) -> None:
-    etl: BaseETL = etl_class()
+async def run_etl(etl, url: str):
     raw_data = await extract_task(etl, url)
     transformed_data = transform_task(etl, raw_data)
     await load_task(etl, transformed_data)
 
 
-@flow
+@flow(task_runner=ConcurrentTaskRunner())
 async def main_pipeline():
-    # Define ETLs to run
     etls = [
-        (StarlinkETL, "https://api.spacexdata.com/v4/starlink"),
-        # (RocketETL, "https://api.spacexdata.com/v4/rockets"),
-        # (LaunchETL, "https://api.spacexdata.com/v4/launches"),
+        (LaunchETL(), "https://api.spacexdata.com/v4/launches"),
+        (StarlinkETL(), "https://api.spacexdata.com/v4/starlink"),
+        # Rocket
+        # LaunchPad
+        # LandingPad
     ]
 
-    # Create coroutine objects for each ETL flow
-    coros = [etl_flow(etl_cls, url) for etl_cls, url in etls]
+    await asyncio.gather(*(run_etl(etl, url) for etl, url in etls))
 
-    # Run them concurrently
-    await asyncio.gather(*coros)
 
+# TODO: Make etl_flow possible to run individually by passing a parameter in the UI
 
 if __name__ == "__main__":
     asyncio.run(main_pipeline())
