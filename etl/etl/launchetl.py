@@ -36,6 +36,8 @@ INSERT INTO launch (
 
 
 class LaunchETL(BaseETL):
+    name = "Launch"
+
     def __init__(self, db_path: Path = Path("data", "starlink.db")) -> None:
         super().__init__(db_path)
 

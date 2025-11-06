@@ -73,6 +73,8 @@ INSERT INTO starlink (
 
 
 class StarlinkETL(BaseETL):
+    name = "Starlink"
+
     def __init__(self, db_path: Path = Path("data", "starlink.db")) -> None:
         super().__init__(db_path)
 

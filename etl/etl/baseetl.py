@@ -7,6 +7,8 @@ T = TypeVar("T")
 
 
 class BaseETL(ABC, Generic[T]):
+    name: str
+
     def __init__(self, db_path: Path) -> None:
         self.db_path = db_path
 
