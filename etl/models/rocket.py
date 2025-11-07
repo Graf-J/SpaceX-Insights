@@ -5,11 +5,10 @@ from typing import Optional
 
 @dataclass
 class RocketStage:
-    # AUTOINCREMENT ID in Database
-    rocket_id: str  # foreign key
-    stage_type: str  # first_stage, second_stage or whatever
-    thrust_vacuum_kN: float  # from thrust_vacuum if first stage, else thrust
-    thrust_vacuum_lbf: float  # from thrust_vacuum if first stage, else thrust
+    rocket_id: str
+    stage_type: str
+    thrust_vacuum_kN: float
+    thrust_vacuum_lbf: float
     fuel_amount_tons: float
     burn_time_sec: float
     reusable: bool
@@ -18,8 +17,7 @@ class RocketStage:
 
 @dataclass
 class RocketEngine:
-    # AUTOINCREMENT ID
-    rocket_id: str  # Foreign Key
+    rocket_id: str
     number: int
     type: str
     version: str
@@ -38,8 +36,7 @@ class RocketEngine:
 
 @dataclass
 class RocketPayload:
-    # AUTOINCREMENT ID
-    rocket_id: str  # Foreign Key
+    rocket_id: str
     name: str
     kg: float
 
