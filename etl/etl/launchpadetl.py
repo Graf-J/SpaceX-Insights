@@ -74,7 +74,7 @@ class LaunchpadETL(BaseETL):
             cursor = db.cursor()
 
             # Database performance tuning
-            cursor.execute("PRAGMA foreign_keys = OFF;")
+            cursor.execute("PRAGMA foreign_keys = ON;")
             cursor.execute("PRAGMA journal_mode = WAL;")
             cursor.execute("PRAGMA synchronous = NORMAL;")
 

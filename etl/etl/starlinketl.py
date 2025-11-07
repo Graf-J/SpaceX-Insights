@@ -42,7 +42,8 @@ CREATE TABLE IF NOT EXISTS starlink (
     gp_id INTEGER,
     tle_line0 TEXT,
     tle_line1 TEXT,
-    tle_line2 TEXT
+    tle_line2 TEXT,
+    FOREIGN KEY (launch_id) REFERENCES launch(id)
 );
 """
 
@@ -129,7 +130,7 @@ class StarlinkETL(BaseETL):
             cursor = db.cursor()
 
             # Database performance tuning
-            cursor.execute("PRAGMA foreign_keys = OFF;")
+            cursor.execute("PRAGMA foreign_keys = ON;")
             cursor.execute("PRAGMA journal_mode = WAL;")
             cursor.execute("PRAGMA synchronous = NORMAL;")
 
