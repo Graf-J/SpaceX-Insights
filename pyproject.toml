@@ -12,5 +12,13 @@ dependencies = [
 [dependency-groups]
 dev = [
     "jupyter>=1.1.1",
+    "plotly>=6.4.0",
+    "matplotlib>=3.10.7",
     "pandas>=2.3.3",
+    "pyproj>=3.7.2",
+    "scikit-learn>=1.7.2",
+    "sgp4>=2.25",
+    "skyfield>=1.53",
+    "scipy>=1.16.3",
+    "nbstripout>=0.8.1",
 ]

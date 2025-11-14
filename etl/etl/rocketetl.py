@@ -35,8 +35,7 @@ CREATE TABLE IF NOT EXISTS rocket_stage (
     fuel_amount_tons REAL,
     burn_time_sec REAL,
     reusable BOOLEAN,
-    engines INTEGER,
-    FOREIGN KEY (rocket_id) REFERENCES rocket(id)
+    engines INTEGER
 );
 """
 
@@ -57,8 +56,7 @@ CREATE TABLE IF NOT EXISTS rocket_engine (
     thrust_sea_level_kN REAL,
     thrust_sea_level_lbf REAL,
     thrust_vacuum_kN REAL,
-    thrust_vacuum_lbf REAL,
-    FOREIGN KEY (rocket_id) REFERENCES rocket(id)
+    thrust_vacuum_lbf REAL
 );
 """
 
@@ -67,8 +65,7 @@ CREATE TABLE IF NOT EXISTS rocket_payload (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     rocket_id TEXT,
     name TEXT,
-    kg REAL,
-    FOREIGN KEY (rocket_id) REFERENCES rocket(id)
+    kg REAL
 );
 """
 
@@ -209,7 +206,6 @@ class RocketETL(BaseETL):
             cursor = db.cursor()
 
             # Database performance tuning
-            cursor.execute("PRAGMA foreign_keys = ON;")
             cursor.execute("PRAGMA journal_mode = WAL;")
             cursor.execute("PRAGMA synchronous = NORMAL;")
 

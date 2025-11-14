@@ -22,9 +22,7 @@ CREATE TABLE IF NOT EXISTS launch (
     recovered BOOLEAN,
     details TEXT,
     patch_url TEXT,
-    youtube_url TEXT,
-    FOREIGN KEY (rocket_id) REFERENCES rocket(id),
-    FOREIGN KEY (launchpad_id) REFERENCES launchpad(id)
+    youtube_url TEXT
 );
 """
 
@@ -88,7 +86,6 @@ class LaunchETL(BaseETL):
             cursor = db.cursor()
 
             # Database performance tuning
-            cursor.execute("PRAGMA foreign_keys = ON;")
             cursor.execute("PRAGMA journal_mode = WAL;")
             cursor.execute("PRAGMA synchronous = NORMAL;")
 

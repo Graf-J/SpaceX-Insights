@@ -33,6 +33,6 @@ class BaseETL(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def load(self, transformed_data: list[T]) -> None:
+    def load(self, transformed_data: list[T]) -> None:
         """Load data into storage"""
         pass
