@@ -1,50 +1,50 @@
 # SpaceX-Insights
 
+# SpaceX-Insights
+
 This project implements a full ETL pipeline that extracts, transforms, and loads data from the public SpaceX API into a local SQLite database.  
 The pipeline can be executed locally with Prefect or fully containerized using Docker.
 
 ------------------------------------------------------------
 
-API Documentation:
+API Documentation:  
 https://github.com/r-spacex/SpaceX-API/tree/master/docs
 
 ------------------------------------------------------------
 Local Execution (Prefect)
 
 1. Start Prefect Server
-、、、
+
 uv run prefect server start
-、、、
+
+
 2. Run ETL Pipeline
-、、、
+
 python -m etl.flows.etl_flow
-、、、
+
 
 Output database will be generated in:
-、、、
+
 data/starlink.db
-、、、
+
 
 
 ------------------------------------------------------------
 Docker Execution (Recommended)
 
 1. Build the Docker image
-、、、
+
 docker build -t spacex-insights .
-、、、
 
 
 2. Run the ETL pipeline inside Docker
-、、、
+
 docker run --rm -v "$(pwd)/data:/app/data" spacex-insights
-、、、
 
 
 The SQLite database will be written to:
-、、、
+
 data/starlink.db
-、、、
 
 
 ------------------------------------------------------------
@@ -52,18 +52,16 @@ Expected Output
 
 When the pipeline completes successfully, logs similar to the following should appear:
 
-、、、
 Task run 'Launch - Extract' – Finished in state Completed
 Task run 'Rocket - Transform' – Finished in state Completed
 Task run 'Starlink - Load' – Finished in state Completed
 Flow run finished in state Completed
-、、、
 
 
 You should then see the generated database file:
-、、、
+
 data/starlink.db
-、、、
+
 
 ------------------------------------------------------------
 Notes
@@ -72,7 +70,11 @@ Notes
 - Ensure the `data/` directory exists before running Docker.
 - Prefect local execution is useful for debugging.
 - ETL implementation can be found in the `etl/` directory.
-- Jupyter notebooks and analysis scripts are in the `analysis/` directory.
+- Analysis and notebooks are in the `analysis/` directory.
+
+
+
+
 
 # Repository Structure
 
