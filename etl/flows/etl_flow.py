@@ -78,3 +78,4 @@ def main_pipeline(etl_param: None | Literal["Launch", "Rocket", "Starlink"] = No
 
 if __name__ == "__main__":
     main_pipeline()  
+    main_pipeline.serve(name="ETL-Pipeline")
