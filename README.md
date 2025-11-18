@@ -37,18 +37,19 @@ The system automates the following workflow:
 ---
 
 ## 2. Architecture Diagram
-      SpaceX REST API
-            │
-            ▼
-   Prefect ETL Pipeline
-    (Docker container)
-            │
-            ▼
-     SQLite Database
-        starlink.db
-            │
-            ▼
-  Streamlit Web App (Docker)
+
+  ```
+SpaceX REST API
+        │
+        ▼
+Prefect ETL Pipeline (Docker)
+        │
+        ▼
+SQLite Database: starlink.db
+        │
+        ▼
+Streamlit Web App (Docker)
+```
 
 
 The project uses **docker-compose** to orchestrate three services:
