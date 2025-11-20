@@ -1,0 +1,33 @@
+# Stage 1: Builder (install Python deps including pyarrow)
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm AS builder
+
+WORKDIR /app
+
+# Install system dependencies for pyarrow
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libz-dev \
+    zlib1g-dev \
+    libbz2-dev \
+    liblz4-dev \
+    libzstd-dev
+
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev
+
+# Stage 2: Runtime
+FROM python:3.13-slim AS runtime
+
+WORKDIR /app
+
+COPY --from=builder /app/.venv ./.venv
+
+ENV VIRTUAL_ENV=/app/.venv
+ENV PATH="/app/.venv/bin:$PATH"
+
+COPY analysis ./analysis
+
+EXPOSE 8501
+
+CMD ["streamlit", "run", "analysis/app.py", "--server.port=8501", "--server.address=0.0.0.0"]
