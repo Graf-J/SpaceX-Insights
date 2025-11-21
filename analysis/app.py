@@ -712,21 +712,11 @@ with col1:
         st.dataframe(df_positions[["starlink_name", "launch_name", "x", "y", "z"]].head(10))
 
 with col2:
-    st.header("Satellite Visualizations")
+    cone_size = 0.2
+    cone_scale = 0.05
+    texture_size = (512, 256)
 
-    # If computed positions exist, show 3D viewer
-    st.markdown("### 3D Viewer")
-    cone_size = st.slider("Cone size (sizeref)", 0.01, 1.0, 0.2)
-    cone_scale = st.slider("Cone scale (velocity multiplier)", 0.001, 1.0, 0.05)
-    texture_res = st.selectbox("Texture resolution", options=["low (256x128)", "medium (512x256)", "high (1024x512)"], index=1)
-    if texture_res.startswith("low"):
-        texture_size = (256, 128)
-    elif texture_res.startswith("high"):
-        texture_size = (1024, 512)
-    else:
-        texture_size = (512, 256)
-
-    st.subheader("Plots")
+    st.header("Interactive Plots")
 
     # Choice: static 3D or animated time-slider
     vis_mode = st.radio("Visualization mode", ["Static (single time)", "Animate over time"])
@@ -792,14 +782,13 @@ with col2:
     else:
         # Animated mode requires launch_date to be present
         st.info("Animation will compute positions for each time step. This may be slow for many satellites.")
-        if st.button("Build animation"):
-            with st.spinner("Building animation frames..."):
-                fig_anim = plot_satellites_3d_time_slider(
-                    df_now,
-                    cone_size=cone_size,
-                    cone_scale=cone_scale
-                )
-                html = fig_anim.to_html(include_plotlyjs="cdn", full_html=False)
-                components.html(html, height=500, scrolling=True)
+        with st.spinner("Building animation frames..."):
+            fig_anim = plot_satellites_3d_time_slider(
+                df_now,
+                cone_size=cone_size,
+                cone_scale=cone_scale
+            )
+            html = fig_anim.to_html(include_plotlyjs="cdn", full_html=False)
+            components.html(html, height=500, scrolling=True)
 
         
