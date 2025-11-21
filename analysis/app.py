@@ -1,10 +1,10 @@
 """
-streamlit_starlink_dashboard.py
+app.py
 
 A focused Streamlit dashboard for EDA and visualizations based on starlink.db.
 - Loads starlink.db (default ../data/starlink.db)
 - Computes satellite positions using sgp4 (compute_satellite_position)
-- Shows summary tables, distributions, and interactive 3D visualizations
+- Shows interactive 3D visualizations
 - Includes an animated time-slider 3D view
 """
 import io
@@ -179,71 +179,63 @@ def plot_satellites_3d(df, cone_size=0.1, cone_scale=0.05, texture_size=(512, 25
         showlegend=False,
     )
 
-    # Prepare palette for launches
-    palette = [
-        "red", "blue", "green", "orange", "purple", "cyan", "magenta", "brown", "olive", "teal"
-    ]
-
-    # Group by launch_name (fall back to launch_id if not present)
-    if "launch_name" in df.columns:
-        group_key = "launch_name"
-    elif "launch_id" in df.columns:
-        group_key = "launch_id"
-    else:
-        group_key = None
-
     fig = go.Figure()
     fig.add_trace(earth_surface)
 
-    if group_key is None:
-        # Single group: use all data in one color
-        x = np.asarray(df["x"])
-        y = np.asarray(df["y"])
-        z = np.asarray(df["z"])
-        uvec = np.asarray(df["vx"]) * cone_scale
-        vvec = np.asarray(df["vy"]) * cone_scale
-        wvec = np.asarray(df["vz"]) * cone_scale
-        names = df.get("starlink_name", None)
+    if df is not None:
+        # Prepare palette for launches
+        palette = [
+            "red", "blue", "green", "orange", "purple", "cyan", "magenta", "brown", "olive", "teal"
+        ]
+        
+        # Group by launch_name (fall back to launch_id if not present)
+        if "launch_name" in df.columns:
+            group_key = "launch_name"
+        elif "launch_id" in df.columns:
+            group_key = "launch_id"
+        else:
+            group_key = None
 
-        satellite_cones = go.Cone(
-            x=x, y=y, z=z, u=uvec, v=vvec, w=wvec,
-            colorscale=[[0, "red"], [1, "red"]],
-            sizemode="absolute", sizeref=cone_size, anchor="tail",
-            showscale=False, name="Starlink", text=names, hoverinfo="text"
-        )
-        sat_markers = go.Scatter3d(
-            x=x, y=y, z=z, mode="markers", marker=dict(size=2, color="red"),
-            hovertext=names, hoverinfo="text", name="Satellite positions"
-        )
-        fig.add_trace(satellite_cones)
-        fig.add_trace(sat_markers)
-    else:
-        groups = df.groupby(group_key, sort=False)
-        for i, (gname, gdf) in enumerate(groups):
-            color = palette[i % len(palette)]
-            x = np.asarray(gdf["x"])
-            y = np.asarray(gdf["y"])
-            z = np.asarray(gdf["z"])
-            uvec = np.asarray(gdf["vx"]) * cone_scale
-            vvec = np.asarray(gdf["vy"]) * cone_scale
-            wvec = np.asarray(gdf["vz"]) * cone_scale
-            names = gdf.get("starlink_name", None)
+        
 
-            # Cone trace per-launch (colorscale with same color at both ends)
+        if group_key is None:
+            # Single group: use all data in one color
+            x = np.asarray(df["x"])
+            y = np.asarray(df["y"])
+            z = np.asarray(df["z"])
+            uvec = np.asarray(df["vx"]) * cone_scale
+            vvec = np.asarray(df["vy"]) * cone_scale
+            wvec = np.asarray(df["vz"]) * cone_scale
+            names = df.get("starlink_name", None)
+
             satellite_cones = go.Cone(
                 x=x, y=y, z=z, u=uvec, v=vvec, w=wvec,
-                colorscale=[[0, color], [1, color]],
+                colorscale=[[0, "red"], [1, "red"]],
                 sizemode="absolute", sizeref=cone_size, anchor="tail",
-                showscale=False, name=f"{gname} (cones)", text=names, hoverinfo="text",
-                showlegend=False
-            )
-            # Marker trace per-launch
-            sat_markers = go.Scatter3d(
-                x=x, y=y, z=z, mode="markers", marker=dict(size=3, color=color),
-                hovertext=names, hoverinfo="text", name=f"{gname}"
+                showscale=False, name="Starlink", text=names, hoverinfo="text"
             )
             fig.add_trace(satellite_cones)
-            fig.add_trace(sat_markers)
+        else:
+            groups = df.groupby(group_key, sort=False)
+            for i, (gname, gdf) in enumerate(groups):
+                color = palette[i % len(palette)]
+                x = np.asarray(gdf["x"])
+                y = np.asarray(gdf["y"])
+                z = np.asarray(gdf["z"])
+                uvec = np.asarray(gdf["vx"]) * cone_scale
+                vvec = np.asarray(gdf["vy"]) * cone_scale
+                wvec = np.asarray(gdf["vz"]) * cone_scale
+                names = gdf.get("starlink_name", None)
+
+                # Cone trace per-launch (colorscale with same color at both ends)
+                satellite_cones = go.Cone(
+                    x=x, y=y, z=z, u=uvec, v=vvec, w=wvec,
+                    colorscale=[[0, color], [1, color]],
+                    sizemode="absolute", sizeref=cone_size, anchor="tail",
+                    showscale=False, name=f"{gname}", text=names, hoverinfo="text",
+                    showlegend=True
+                )
+                fig.add_trace(satellite_cones)
 
     fig.update_layout(
         scene=dict(
@@ -282,83 +274,80 @@ def plot_satellites_3d_time_slider(
     earth_surface = go.Surface(x=x_earth, y=y_earth, z=z_earth, colorscale=[[0, "blue"], [1, "blue"]], opacity=0.3, showscale=False)
 
     times = np.arange(0, minutes_range + 1, step_minutes)
+    frames = None
 
-    # Choose palette
-    palette = [
-        "red", "blue", "green", "orange", "purple", "cyan", "magenta", "brown", "olive", "teal"
-    ]
+    if df is not None:
+        # Choose palette
+        palette = [
+            "red", "blue", "green", "orange", "purple", "cyan", "magenta", "brown", "olive", "teal"
+        ]
 
-    # Determine grouping key
-    if "launch_name" in df.columns:
-        group_key = "launch_name"
-    elif "launch_id" in df.columns:
-        group_key = "launch_id"
-    else:
-        group_key = None
-
-    # Precompute frames
-    frames = []
-    # axis ranges
-    x_min, x_max = x_earth.min(), x_earth.max()
-    y_min, y_max = y_earth.min(), y_earth.max()
-    z_min, z_max = z_earth.min(), z_earth.max()
-
-    # compute positions for each frame (may be heavy)
-    for t in times:
-        # propagate each satellite by launch_date + t minutes
-        records = []
-        for _, row in df.iterrows():
-            base_launch = row["launch_date"]
-            if pd.isna(base_launch):
-                continue
-            pt = base_launch + pd.Timedelta(minutes=int(t))
-            res = compute_satellite_position_cached(row["tle_line1"], row["tle_line2"], pt.isoformat())
-            if not np.isnan(res["x"]):
-                rec = {**res, "starlink_name": row.get("starlink_name", None)}
-                # preserve the launch identifier if present
-                if group_key is not None:
-                    rec[group_key] = row.get(group_key)
-                records.append(rec)
-        
-        if len(records) == 0:
-            # frame with just earth
-            frame_traces = [earth_surface]
+        # Determine grouping key
+        if "launch_name" in df.columns:
+            group_key = "launch_name"
+        elif "launch_id" in df.columns:
+            group_key = "launch_id"
         else:
-            step_df = pd.DataFrame(records)
-            x_min = min(x_min, step_df["x"].min()); x_max = max(x_max, step_df["x"].max())
-            y_min = min(y_min, step_df["y"].min()); y_max = max(y_max, step_df["y"].max())
-            z_min = min(z_min, step_df["z"].min()); z_max = max(z_max, step_df["z"].max())
+            group_key = None
 
-            frame_traces = [earth_surface]
-            if group_key is None:
-                # single group
-                cones = go.Cone(
-                    x=step_df["x"], y=step_df["y"], z=step_df["z"],
-                    u=step_df["vx"] * cone_scale, v=step_df["vy"] * cone_scale, w=step_df["vz"] * cone_scale,
-                    colorscale=[[0, "red"], [1, "red"]], sizemode="absolute", sizeref=cone_size, anchor="tail",
-                    showscale=False, text=step_df.get("starlink_name", None), hoverinfo="text", name="Starlink",
-                    showlegend=False
-                )
-                frame_traces.append(cones)
+        # Precompute frames
+        frames = []
+        # axis ranges
+        x_min, x_max = x_earth.min(), x_earth.max()
+        y_min, y_max = y_earth.min(), y_earth.max()
+        z_min, z_max = z_earth.min(), z_earth.max()
+
+        # compute positions for each frame (may be heavy)
+        for t in times:
+            # propagate each satellite by launch_date + t minutes
+            records = []
+            for _, row in df.iterrows():
+                base_launch = row["launch_date"]
+                if pd.isna(base_launch):
+                    continue
+                pt = base_launch + pd.Timedelta(minutes=int(t))
+                res = compute_satellite_position_cached(row["tle_line1"], row["tle_line2"], pt.isoformat())
+                if not np.isnan(res["x"]):
+                    rec = {**res, "starlink_name": row.get("starlink_name", None)}
+                    # preserve the launch identifier if present
+                    if group_key is not None:
+                        rec[group_key] = row.get(group_key)
+                    records.append(rec)
+            
+            if len(records) == 0:
+                # frame with just earth
+                frame_traces = [earth_surface]
             else:
-                # build per-launch cones/markers
-                for i, (gname, gdf) in enumerate(step_df.groupby(group_key, sort=False)):
-                    color = palette[i % len(palette)]
+                step_df = pd.DataFrame(records)
+                x_min = min(x_min, step_df["x"].min()); x_max = max(x_max, step_df["x"].max())
+                y_min = min(y_min, step_df["y"].min()); y_max = max(y_max, step_df["y"].max())
+                z_min = min(z_min, step_df["z"].min()); z_max = max(z_max, step_df["z"].max())
+
+                frame_traces = [earth_surface]
+                if group_key is None:
+                    # single group
                     cones = go.Cone(
-                        x=gdf["x"], y=gdf["y"], z=gdf["z"],
-                        u=gdf["vx"] * cone_scale, v=gdf["vy"] * cone_scale, w=gdf["vz"] * cone_scale,
-                        colorscale=[[0, color], [1, color]], sizemode="absolute", sizeref=cone_size, anchor="tail",
-                        showscale=False, text=gdf.get("starlink_name", None), hoverinfo="text", name=f"{gname} (cones)",
+                        x=step_df["x"], y=step_df["y"], z=step_df["z"],
+                        u=step_df["vx"] * cone_scale, v=step_df["vy"] * cone_scale, w=step_df["vz"] * cone_scale,
+                        colorscale=[[0, "red"], [1, "red"]], sizemode="absolute", sizeref=cone_size, anchor="tail",
+                        showscale=False, text=step_df.get("starlink_name", None), hoverinfo="text", name="Starlink",
                         showlegend=False
                     )
-                    markers = go.Scatter3d(
-                        x=gdf["x"], y=gdf["y"], z=gdf["z"],
-                        mode="markers", marker=dict(size=3, color=color),
-                        hovertext=gdf.get("starlink_name", None), hoverinfo="text", name=f"{gname}"
-                    )
-                    frame_traces.extend([cones, markers])
+                    frame_traces.append(cones)
+                else:
+                    # build per-launch cones/markers
+                    for i, (gname, gdf) in enumerate(step_df.groupby(group_key, sort=False)):
+                        color = palette[i % len(palette)]
+                        cones = go.Cone(
+                            x=gdf["x"], y=gdf["y"], z=gdf["z"],
+                            u=gdf["vx"] * cone_scale, v=gdf["vy"] * cone_scale, w=gdf["vz"] * cone_scale,
+                            colorscale=[[0, color], [1, color]], sizemode="absolute", sizeref=cone_size, anchor="tail",
+                            showscale=False, text=gdf.get("starlink_name", None), hoverinfo="text", name=f"{gname}",
+                            showlegend=True
+                        )
+                        frame_traces.extend([cones])
 
-        frames.append(go.Frame(data=frame_traces, name=str(int(t))))
+            frames.append(go.Frame(data=frame_traces, name=str(int(t))))
 
     # initial figure
     init_data = frames[0].data if frames else [earth_surface]
@@ -378,9 +367,9 @@ def plot_satellites_3d_time_slider(
     fig.update_layout(
         sliders=sliders,
         scene=dict(
-            xaxis=dict(showbackground=False, range=[x_min, x_max]),
-            yaxis=dict(showbackground=False, range=[y_min, y_max]),
-            zaxis=dict(showbackground=False, range=[z_min, z_max]),
+            xaxis=dict(showbackground=False),
+            yaxis=dict(showbackground=False),
+            zaxis=dict(showbackground=False),
             aspectmode="data",
         ),
         title="Starlink Satellites Over Time",
@@ -501,130 +490,6 @@ def augment_df(df, value_space):
     return pd.concat(dfs, axis=0)
 
 
-def plot_estimated_orbits(df, cone_size=0.1, cone_scale=0.05, texture_size=(512, 256), aug=False):
-    # Prepare palette
-    palette = [
-        "red", "blue", "green", "orange", "purple", "cyan", "magenta", "brown", "olive", "teal"
-    ]
-
-    # Earth surface (shared)
-    R_earth = 6371
-
-    texture = load_earth_texture(
-        "https://eoimages.gsfc.nasa.gov/images/imagerecords/57000/57730/land_ocean_ice_2048.png",
-        size=texture_size,
-    )
-
-    h, w, _ = texture.shape
-    u = np.linspace(0, 2 * np.pi, w)
-    v = np.linspace(0, np.pi, h)
-    U, V = np.meshgrid(u, v)
-    xe = R_earth * np.sin(V) * np.cos(U)
-    ye = R_earth * np.sin(V) * np.sin(U)
-    ze = R_earth * np.cos(V)
-
-    surfacecolor = 0.299 * texture[:, :, 0] + 0.587 * texture[:, :, 1] + 0.114 * texture[:, :, 2]
-    surfacecolor = np.clip(surfacecolor, 0.0, 1.0)
-
-    earth_surface = go.Surface(
-        x=xe, y=ye, z=ze,
-        surfacecolor=surfacecolor,
-        colorscale="gray",
-        cmin=0, cmax=1, showscale=False, hoverinfo="skip", name="Earth", showlegend=False
-    )
-
-    # Build figure and add earth
-    fig = go.Figure()
-    fig.add_trace(earth_surface)
-
-    # Determine grouping
-    if "launch_name" in df.columns:
-        group_key = "launch_name"
-    elif "launch_id" in df.columns:
-        group_key = "launch_id"
-    else:
-        group_key = None
-
-    # If augmentation requested, augment per group
-    if aug:
-        df_proc = augment_df(df, value_space=5)
-    else:
-        df_proc = df.copy()
-
-    # If grouping is not available, treat entire DataFrame as one group
-    if group_key is None:
-        groups = [("all", df_proc)]
-    else:
-        groups = list(df_proc.groupby(group_key, sort=False))
-
-    # For each group, compute PCA, fit ellipse, and add traces
-    legend_items = []
-    for i, (gname, gdf) in enumerate(groups):
-        color = palette[i % len(palette)]
-        points_3d = gdf[["x", "y", "z"]].values
-        if points_3d.shape[0] < 5:
-            # too few points to fit ellipse reliably; just plot points
-            fig.add_trace(go.Scatter3d(
-                x=points_3d[:, 0] if points_3d.shape[0] else [],
-                y=points_3d[:, 1] if points_3d.shape[0] else [],
-                z=points_3d[:, 2] if points_3d.shape[0] else [],
-                mode="markers",
-                marker=dict(size=3, color=color),
-                name=f"{gname} (points - too few)"
-            ))
-            continue
-
-        # PCA & fit in 2D PCA space
-        pca = PCA(n_components=2)
-        points_2d = pca.fit_transform(points_3d)
-
-        try:
-            x0, y0, a, b, theta_rot = fit_ellipse_geometric(points_2d, regularization=True)
-        except Exception:
-            # fallback: plot points only
-            fig.add_trace(go.Scatter3d(
-                x=points_3d[:, 0], y=points_3d[:, 1], z=points_3d[:, 2],
-                mode="markers", marker=dict(size=3, color=color),
-                name=f"{gname} (points)"
-            ))
-            continue
-
-        phi = np.linspace(0, 2 * np.pi, 300)
-        ellipse_2d_x = x0 + a * np.cos(phi) * np.cos(theta_rot) - b * np.sin(phi) * np.sin(theta_rot)
-        ellipse_2d_y = y0 + a * np.cos(phi) * np.sin(theta_rot) + b * np.sin(phi) * np.cos(theta_rot)
-        ellipse_2d = np.column_stack([ellipse_2d_x, ellipse_2d_y])
-        ellipse_3d = pca.inverse_transform(ellipse_2d)
-
-        # Plot original points for this group
-        fig.add_trace(go.Scatter3d(
-            x=points_3d[:, 0], y=points_3d[:, 1], z=points_3d[:, 2],
-            mode="markers", marker=dict(size=3, color=color),
-            name=f"{gname} (points)"
-        ))
-
-        # Plot fitted ellipse in the same color
-        fig.add_trace(go.Scatter3d(
-            x=ellipse_3d[:, 0], y=ellipse_3d[:, 1], z=ellipse_3d[:, 2],
-            mode="lines", line=dict(color=color, width=4),
-            name=f"{gname} (fitted orbit)"
-        ))
-
-    fig.update_layout(
-        title="3D PCA Points with Fitted Ellipses and Earth",
-        scene=dict(
-            aspectmode="data",
-            xaxis=dict(showbackground=False, showgrid=False, zeroline=False, visible=False),
-            yaxis=dict(showbackground=False, showgrid=False, zeroline=False, visible=False),
-            zaxis=dict(showbackground=False, showgrid=False, zeroline=False, visible=False),
-        ),
-        legend=dict(x=0.02, y=0.98, itemwidth=100, bgcolor="rgba(255,255,255,0.7)"),
-        margin=dict(l=0, r=0, t=40, b=0),
-    )
-
-    return fig
-
-
-
 # -------------------------
 # Data loading
 # -------------------------
@@ -653,17 +518,25 @@ with col1:
     launch_selected = st.multiselect("Filter by launch_name (multi)", options=launch_options, default="Starlink 4-35 (v1.5)")
     if len(launch_selected) > 10:
         st.warning("You selected more than 10 launches — using only the first 10.")
-        selected_launches = launch_selected[:10]
+        launch_selected = launch_selected[:10]
     name_search = st.text_input("Search satellite name contains")
 
     # apply filters to df
-    df = df_raw.copy()
-    if launch_selected:
-        df = df[df["launch_name"].astype(str).isin(launch_selected)]
-    if name_search:
-        df = df[df["starlink_name"].str.contains(name_search, case=False, na=False)]
+    if not launch_selected or len(launch_selected) == 0:
+        df = None
+    else:
+        df = df_raw.copy()
+        if launch_selected:
+            df = df[df["launch_name"].astype(str).isin(launch_selected)]
+        if name_search:
+            df = df[df["starlink_name"].str.contains(name_search, case=False, na=False)]
 
-    st.markdown(f"**Filtered records:** {len(df)}")
+    if df is not None:
+        record_num = len(df)
+    else:
+        record_num = 0
+        st.markdown(f"**Filtered records:** {record_num}")
+    
 
     # Track filter changes: if filters change, reset df_positions
     prev_launch = st.session_state.get("prev_launch_selected", None)
@@ -686,23 +559,27 @@ with col1:
 
     # Button to compute instantaneous positions (launch_date)
     if st.button("Compute positions for filtered set"):
-        with st.spinner("Computing positions (may take a while for many satellites)..."):
-            # compute position at launch_date per row
-            df_positions = df.copy()
-            # apply compute_satellite_position with caching helper
-            df_positions = df_positions.assign(
-                **df_positions.apply(
-                    lambda row: compute_satellite_position(row, propagate_time=row["launch_date"]),
-                    axis=1,
+        if df is None:
+            st.info("No filtered data available. Try widening filters.")
+            df_positions = None
+        else:
+            with st.spinner("Computing positions (may take a while for many satellites)..."):
+                # compute position at launch_date per row
+                df_positions = df.copy()
+                # apply compute_satellite_position with caching helper
+                df_positions = df_positions.assign(
+                    **df_positions.apply(
+                        lambda row: compute_satellite_position(row, propagate_time=row["launch_date"]),
+                        axis=1,
+                    )
                 )
-            )
-            df_positions = df_positions.dropna(subset=["x", "y", "z", "vx", "vy", "vz"])
-            # Drop Satelites that are too far away
-            R_earth = 6371.0
-            df_positions["r"] = np.sqrt(df_positions["x"] ** 2 + df_positions["y"] ** 2 + df_positions["z"] ** 2)
-            df_positions = df_positions[(df_positions["r"] - R_earth > 100) & (df_positions["r"] - R_earth < 5000)]
-            st.session_state["df_positions"] = df_positions
-            st.success(f"Computed positions for {len(df_positions)} satellites.")
+                df_positions = df_positions.dropna(subset=["x", "y", "z", "vx", "vy", "vz"])
+                # Drop Satelites that are too far away
+                R_earth = 6371.0
+                df_positions["r"] = np.sqrt(df_positions["x"] ** 2 + df_positions["y"] ** 2 + df_positions["z"] ** 2)
+                df_positions = df_positions[(df_positions["r"] - R_earth > 100) & (df_positions["r"] - R_earth < 5000)]
+                st.session_state["df_positions"] = df_positions
+                st.success(f"Computed positions for {len(df_positions)} satellites.")
     else:
         df_positions = st.session_state.get("df_positions", None)
 
@@ -722,7 +599,9 @@ with col2:
     vis_mode = st.radio("Visualization mode", ["Static (single time)", "Animate over time"])
 
     # If positions not computed at any time, compute at now
-    if df_positions is None:
+    if df is None:
+        df_now = None
+    elif df_positions is None:
         with st.spinner("Computing current positions..."):
             df_now = df.copy()
             df_now = df_now.assign(
@@ -740,45 +619,26 @@ with col2:
         df_now = df_positions
 
     if vis_mode == "Static (single time)":
-        if len(df_now) == 0:
-            st.info("No computed positions available to show. Try computing positions or widening filters.")
+        if df_now is None or len(df_now) == 0:
+            st.info("No computed positions available to show. Try widening filters.")
+            add_orbit = False
         else:
-            # Controls: color coding and orbit overlay
-            color_code_launch = st.checkbox("Color code by launch", value=True, key="color_code_launch")
+            # Controls: orbit overlay
             add_orbit = st.checkbox("Add estimated orbit overlay", value=False, key="add_orbit")
 
-            # Build base static figure (grouping/coloring handled by plot_satellites_3d)
-            fig3 = plot_satellites_3d(df_now, cone_size=cone_size, cone_scale=cone_scale, texture_size=texture_size)
+        # Build base static figure (grouping/coloring handled by plot_satellites_3d)
+        fig3 = plot_satellites_3d(df_now, cone_size=cone_size, cone_scale=cone_scale, texture_size=texture_size)
 
-            # If user doesn't want color coding, force single color for non-earth traces
-            if not color_code_launch:
-                for tr in fig3.data:
-                    ttype = getattr(tr, 'type', None)
-                    # recolor scatter3d markers
-                    if ttype == "scatter3d":
-                        if hasattr(tr, 'marker'):
-                            try:
-                                tr.marker.color = "red"
-                            except Exception:
-                                tr.update(marker=dict(size=3, color="red"))
-                    # cones: set to single color and hide legend
-                    if ttype == "cone":
-                        try:
-                            tr.colorscale = [[0, "red"], [1, "red"]]
-                            tr.showlegend = False
-                        except Exception:
-                            tr.update(colorscale=[[0, "red"], [1, "red"]], showlegend=False)
+        # Overlay orbit(s) if requested and button clicked
+        if add_orbit:
+            try:
+                fig3 = add_orbit_overlay(fig3, df_now, color_by_launch=True)
+            except Exception as e:
+                st.error(f"Failed to compute orbit overlay: {e}")
 
-            # Overlay orbit(s) if requested and button clicked
-            if add_orbit:
-                try:
-                    fig3 = add_orbit_overlay(fig3, df_now, color_by_launch=color_code_launch)
-                except Exception as e:
-                    st.error(f"Failed to compute orbit overlay: {e}")
-
-            # Render the figure
-            html = fig3.to_html(include_plotlyjs="cdn", full_html=False)
-            components.html(html, height=700, scrolling=True)
+        # Render the figure
+        html = fig3.to_html(include_plotlyjs="cdn", full_html=False)
+        components.html(html, height=700, scrolling=True)
     else:
         # Animated mode requires launch_date to be present
         st.info("Animation will compute positions for each time step. This may be slow for many satellites.")
