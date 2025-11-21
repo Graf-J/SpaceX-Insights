@@ -1,6 +1,6 @@
 # SpaceX Insights — ETL Pipeline with Prefect & Docker
 
-This project implements a fully containerized ETL pipeline using **Prefect**, **Docker**, and **Python**, designed to extract, transform, and load SpaceX open-source data into a SQLite database. A Streamlit web application container is included and ready for visualization (to be completed).
+This project implements a fully containerized ETL pipeline using **Prefect**, **Docker**, and **Python**, designed to extract, transform, and load SpaceX open-source data into a SQLite database. A Streamlit web application container is included and ready for visualization.
 
 ---
 
@@ -30,9 +30,10 @@ The system automates the following workflow:
   - UI monitoring
   - Scheduling capability
 
-### Visualize (Upcoming)
-- A Streamlit container is already set up
-- Dashboard development is reserved for later work
+### Visualize
+- Serve interactive dashboards through **Streamlit**
+- Load and display analytical tables from the generated SQLite database
+- Provide visual insights into Starlink satellites through 3D interactive plots
 
 ---
 
@@ -58,7 +59,7 @@ The project uses **docker-compose** to orchestrate three services:
 |--------|-------------|
 | **prefect-server** | Prefect UI + API backend |
 | **etl-flow** | Runs Prefect pipeline automatically |
-| **streamlit-web** | Hosts dashboard (UI incomplete) |
+| **streamlit-web** | Hosts dashboard |
 
 ---
 
@@ -69,7 +70,7 @@ The project uses **docker-compose** to orchestrate three services:
 - **Docker & Docker Compose**
 - **SQLite**
 - **uv** (for fast dependency management)
-- **Streamlit** (UI placeholder)
+- **Streamlit** (interactive dashboard)
 
 ---
 
@@ -126,13 +127,3 @@ Docker ensures that:
 - The ETL and UI services run as isolated containers
 - The database is persisted across runs
 - The entire system is portable for grading/demo
-
----
-
-## 8. Next Steps
-
-### Streamlit Dashboard
-To be completed:
-- Build the Streamlit Web UI
-- Ensure Streamlit Waits for ETL Data Before Starting
-- Expand Analytics (Optional Enhancements)
