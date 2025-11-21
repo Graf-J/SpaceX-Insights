@@ -517,9 +517,8 @@ with col1:
     launch_options = df_raw["launch_name"].astype(str).unique().tolist()
     launch_selected = st.multiselect("Filter by launch_name (multi)", options=launch_options, default="Starlink 4-35 (v1.5)")
     if len(launch_selected) > 10:
-        st.warning("You selected more than 10 launches — using only the first 10.")
+        st.info("You selected more than 10 launches — using only the first 10.")
         launch_selected = launch_selected[:10]
-    name_search = st.text_input("Search satellite name contains")
 
     # apply filters to df
     if not launch_selected or len(launch_selected) == 0:
@@ -528,8 +527,6 @@ with col1:
         df = df_raw.copy()
         if launch_selected:
             df = df[df["launch_name"].astype(str).isin(launch_selected)]
-        if name_search:
-            df = df[df["starlink_name"].str.contains(name_search, case=False, na=False)]
 
     if df is not None:
         record_num = len(df)
@@ -540,12 +537,10 @@ with col1:
 
     # Track filter changes: if filters change, reset df_positions
     prev_launch = st.session_state.get("prev_launch_selected", None)
-    prev_search = st.session_state.get("prev_name_search", None)
 
     # Compare with current filters
     filters_changed = (
-        prev_launch != launch_selected or
-        prev_search != name_search
+        prev_launch != launch_selected
     )
 
     # If changed, reset computed positions
@@ -554,8 +549,6 @@ with col1:
 
     # Update stored filter values for next rerun
     st.session_state["prev_launch_selected"] = launch_selected
-    st.session_state["prev_name_search"] = name_search
-
 
     # Button to compute instantaneous positions (launch_date)
     if st.button("Compute positions for filtered set"):
