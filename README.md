@@ -4,77 +4,14 @@ This project implements a fully containerized ETL pipeline using **Prefect**, **
 
 ---
 
-## 1. Project Overview
+## 1. Usage
 
-The system automates the following workflow:
+### Prerequisites
 
-### Extract
-- Fetch data from SpaceX public API:
-  - Launches
-  - Launchpads
-  - Starlink satellites
-  - Rockets
+* Docker Engine **20.10+** or Docker Desktop **4.0+**
+* Docker Compose **v2.0+** (included by default with Docker Desktop)
 
-### Transform
-- Parse JSON responses
-- Normalize nested structures
-- Select usable analytical fields
-
-### Load
-- Write cleaned tables into a SQLite database stored in a **shared Docker volume**
-
-### Orchestrate
-- Pipeline is managed by **Prefect**:
-  - Logging
-  - Retries
-  - UI monitoring
-  - Scheduling capability
-
-### Visualize
-- Serve interactive dashboards through **Streamlit**
-- Load and display analytical tables from the generated SQLite database
-- Provide visual insights into Starlink satellites through 3D interactive plots
-
----
-
-## 2. Architecture Diagram
-
-  ```
-SpaceX REST API
-        │
-        ▼
-Prefect ETL Pipeline (Docker)
-        │
-        ▼
-SQLite Database: starlink.db
-        │
-        ▼
-Streamlit Web App (Docker)
-```
-
-
-The project uses **docker-compose** to orchestrate three services:
-
-| Service | Description |
-|--------|-------------|
-| **prefect-server** | Prefect UI + API backend |
-| **etl-flow** | Runs Prefect pipeline automatically |
-| **streamlit-web** | Hosts dashboard |
-
----
-
-## 3. Technology Stack
-
-- **Python 3.13**
-- **Prefect 3**
-- **Docker & Docker Compose**
-- **SQLite**
-- **uv** (for fast dependency management)
-- **Streamlit** (interactive dashboard)
-
----
-
-## 4. How to Run the Entire System
+### Start the Full Workflow
 
 Make sure Docker Desktop is running, then simply execute:
 
@@ -82,7 +19,7 @@ Make sure Docker Desktop is running, then simply execute:
 docker-compose up --build
 ```
 
-Docker will automatically:
+Docker will automatically
 
 - Build all images
 - Start Prefect server
@@ -91,18 +28,91 @@ Docker will automatically:
 - Start the Streamlit container
 - Keep services running for demonstration
 
+### Accessing the UIs
+
+* **Prefect UI:** http://localhost:4200
+* **Streamlit Web App:** http://localhost:8501
+
 ---
 
-## 5. Accessing the UI Services
+## 2. Quick preview
 
-### Prefect UI
+### ETL Pipeline
 
-http://localhost:4200
+![ETL Pipeline](images/ETL_Pipeline.png "ETL pipeline")
 
+### Streamlit Dashboard
 
-### Streamlit Web App
+#### Dashboard overview & Static Plot Example
 
-http://localhost:8501
+![Dashboard preview](images/Dashboard_Preview.png "Dashboard overview and static plot preview")
+
+#### Animation Example
+
+![Dashboard animation preview](images/Dashboard_Animation.png "Animation example")
+
+---
+
+## 3. System workflow
+
+The system automates the following workflow:
+
+### Extract
+
+- Fetch data from SpaceX public API:
+  - Launches
+  - Launchpads
+  - Starlink satellites
+  - Rockets
+
+### Transform
+
+- Parse JSON responses
+- Normalize nested structures
+- Select usable analytical fields
+
+### Load
+
+- Write cleaned tables into a SQLite database stored in a **shared Docker volume**
+
+### Orchestrate
+
+- Pipeline is managed by **Prefect**:
+  - Logging
+  - Retries
+  - UI monitoring
+  - Scheduling capability
+
+### Visualize
+
+- Serve interactive dashboards through **Streamlit**
+- Load and display analytical tables from the generated SQLite database
+- Provide visual insights into Starlink satellites through 3D interactive plots
+
+---
+
+## 4. Architecture Diagram
+
+![System architecture](images/System_Architecture.png "System architecture")
+
+The project uses **docker-compose** to orchestrate three services:
+
+| Service                  | Description                         |
+| ------------------------ | ----------------------------------- |
+| **prefect-server** | Prefect UI + API backend            |
+| **etl-flow**       | Runs Prefect pipeline automatically |
+| **streamlit-web**  | Hosts dashboard                     |
+
+---
+
+## 5. Technology Stack
+
+- **Python 3.13**
+- **Prefect 3**
+- **Docker & Docker Compose**
+- **SQLite**
+- **uv** (for fast dependency management)
+- **Streamlit** (interactive dashboard)
 
 ---
 
