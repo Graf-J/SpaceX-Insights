@@ -3,8 +3,24 @@
 This project implements a fully containerized ETL pipeline using **Prefect**, **Docker**, and **Python**, designed to extract, transform, and load SpaceX open-source data into a SQLite database. A Streamlit web application container is included and ready for visualization.
 
 ---
+## 1. How to Run the Entire System
 
-## 1. Project Overview
+Make sure Docker Desktop is running, then simply execute:
+
+```bash
+docker-compose up --build
+```
+
+Docker will automatically:
+
+- Build all images
+- Start Prefect server
+- Run the ETL pipeline
+- Generate the SQLite database (`starlink.db`)
+- Start the Streamlit container
+- Keep services running for demonstration
+  
+## 2. Project Overview
 
 The system automates the following workflow:
 
@@ -37,7 +53,7 @@ The system automates the following workflow:
 
 ---
 
-## 2. Architecture Diagram
+## 3. Architecture Diagram
 
   ```
 SpaceX REST API
@@ -63,7 +79,7 @@ The project uses **docker-compose** to orchestrate three services:
 
 ---
 
-## 3. Technology Stack
+## 4. Technology Stack
 
 - **Python 3.13**
 - **Prefect 3**
@@ -71,25 +87,6 @@ The project uses **docker-compose** to orchestrate three services:
 - **SQLite**
 - **uv** (for fast dependency management)
 - **Streamlit** (interactive dashboard)
-
----
-
-## 4. How to Run the Entire System
-
-Make sure Docker Desktop is running, then simply execute:
-
-```bash
-docker-compose up --build
-```
-
-Docker will automatically:
-
-- Build all images
-- Start Prefect server
-- Run the ETL pipeline
-- Generate the SQLite database (`starlink.db`)
-- Start the Streamlit container
-- Keep services running for demonstration
 
 ---
 
